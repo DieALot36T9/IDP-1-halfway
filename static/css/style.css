@@ -165,3 +165,127 @@
     display: block;
     margin: 0 auto;
 }
+
+/* --- Responsive Styles & Hamburger Menu --- */
+/* This section makes the website layout adapt to different screen sizes, like mobile phones. */
+
+/* The hamburger menu button container */
+.navbar-toggle {
+    display: none; /* Hide the hamburger on desktop screens */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    position: relative;
+    z-index: 1000; /* Ensures the button is on top of other content */
+}
+
+/* The hamburger icon itself (the three lines) */
+.hamburger,
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: var(--heading-color);
+    border-radius: 3px;
+    transition: all 0.3s ease-in-out;
+}
+
+.hamburger::before {
+    /* This creates the top line of the hamburger icon */
+    transform: translateY(-8px);
+}
+
+.hamburger::after {
+    /* This creates the bottom line of the hamburger icon */
+    transform: translateY(8px);
+}
+
+
+/* Media Query for mobile devices (screens smaller than 768px wide) */
+@media (max-width: 768px) {
+    /* ---- GENERAL LAYOUT ---- */
+    /* Reduce padding on the main app container and navbar for smaller screens */
+    #app, .navbar {
+        padding: 1rem;
+    }
+    .navbar {
+        margin-bottom: 1.5rem;
+    }
+
+    /* ---- NAVBAR & HAMBURGER ---- */
+    /* Show the hamburger button on mobile */
+    .navbar-toggle {
+        display: block;
+    }
+
+    /* Hide the regular navigation links on mobile */
+    .navbar-links {
+        display: none; /* Hide the menu by default */
+        position: absolute;
+        top: 70px; /* Position it just below the navbar */
+        left: 0;
+        right: 0;
+        width: 100%;
+        background-color: white;
+        flex-direction: column; /* Stack the links vertically */
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        border-bottom-left-radius: var(--border-radius);
+        border-bottom-right-radius: var(--border-radius);
+    }
+
+    /* This style is applied when the hamburger is clicked */
+    .navbar-links.active {
+        display: flex; /* Show the menu */
+    }
+
+    /* Style the links inside the mobile menu */
+    .navbar-links a {
+        padding: 1rem;
+        text-align: center;
+        width: 100%;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .navbar-links a:last-child {
+        border-bottom: none;
+    }
+
+    /* ---- HERO SECTION ---- */
+    /* Adjust padding and font sizes for the hero section on mobile */
+    .hero-section {
+        padding: 2rem 1rem;
+    }
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    .hero-section p {
+        font-size: 1rem;
+    }
+    .btn-large {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    /* ---- GRIDS & CARDS ---- */
+    /* Reduce the gap between cards on mobile */
+    .book-grid, .subscription-grid {
+        gap: 1rem;
+    }
+
+    /* ---- FORMS ---- */
+    /* Adjust form container padding for easier use on small screens */
+    .form-container {
+        padding: 1.5rem;
+        margin: 1rem auto;
+    }
+
+    /* ---- PDF READER ---- */
+    /* Make PDF navigation buttons a bit bigger for easier tapping on mobile */
+    #prev-page, #next-page {
+        padding: 0.8rem 1.2rem;
+        font-size: 1rem;
+    }
+}

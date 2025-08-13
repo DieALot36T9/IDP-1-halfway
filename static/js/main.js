@@ -117,7 +117,17 @@ function renderNavbar() {
     } else {
         links = `<a href="#/books">Browse Books</a><a href="#/login">Login</a><a href="#/register">Register</a>`;
     }
-    return `<nav class="navbar"><a href="#/" class="logo">eBookReader</a><div class="navbar-links">${links}</div></nav>`;
+    // Added a hamburger button for mobile view. This button will be shown on smaller screens
+    // and will toggle the visibility of the navigation links.
+    return `
+        <nav class="navbar">
+            <a href="#/" class="logo">eBookReader</a>
+            <button class="navbar-toggle" aria-label="Toggle navigation">
+                <span class="hamburger"></span>
+            </button>
+            <div class="navbar-links">${links}</div>
+        </nav>
+    `;
 }
 
 function renderBookCard(book, context = 'browse') {
@@ -603,6 +613,18 @@ function init() {
         if (e.target.id === 'logout-btn') {
             e.preventDefault();
             logout();
+        }
+
+        // Event listener for the hamburger menu.
+        // It listens for clicks on the body. If the click target is the .navbar-toggle button
+        // (or an element inside it), it toggles the 'active' class on the .navbar-links container.
+        // Using event delegation on `document.body` ensures this works even though the navbar is
+        // re-rendered on each page change.
+        if (e.target.closest('.navbar-toggle')) {
+            const links = document.querySelector('.navbar-links');
+            if (links) {
+                links.classList.toggle('active');
+            }
         }
     });
     router();
