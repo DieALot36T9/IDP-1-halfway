@@ -1,0 +1,64 @@
+/* static/css/admin.css */
+/* Stylesheet for the Admin Panel */
+
+@import url('base.css');
+
+/* --- Main Layout --- */
+#admin-app {
+    display: flex;
+}
+
+.sidebar {
+    width: 240px;
+    background-color: var(--heading-color);
+    color: var(--light-text-color);
+    min-height: 100vh;
+    padding-top: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: var(--light-text-color);
+}
+
+.sidebar a {
+    display: block;
+    color: #e0e0e0;
+    padding: 15px 20px;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--light-text-color);
+    border-left: 3px solid var(--primary-color);
+    text-decoration: none;
+}
+
+.sidebar .logout-btn {
+    background-color: var(--danger-color);
+    position: absolute;
+    bottom: 0;
+    width: 240px;
+    text-align: center;
+    color: var(--light-text-color);
+    border-left: 3px solid transparent;
+}
+.sidebar .logout-btn:hover {
+    background-color: #c93a2b; /* Darker red */
+    color: var(--light-text-color);
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    margin-left: 240px; /* Same as sidebar width */
+    width: calc(100% - 240px);
+}
