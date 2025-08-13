@@ -132,20 +132,29 @@ a:hover {
 
 
 /* --- Tables --- */
+.table-container {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin: 2rem 0;
+}
+
 table {
     width: 100%;
+    min-width: 600px; /* Force scroll on smaller screens */
     border-collapse: collapse;
-    margin-top: 20px;
     background-color: var(--card-bg-color);
-    box-shadow: var(--box-shadow);
-    border-radius: var(--border-radius);
-    overflow: hidden;
 }
 
 th, td {
     border-bottom: 1px solid var(--border-color);
     padding: 12px 15px;
     text-align: left;
+    white-space: nowrap; /* Prevent content from wrapping */
 }
 
 th {
@@ -162,7 +171,7 @@ tr:nth-child(even) {
     background-color: #f8f9fa;
 }
 
-/* --- Utility Classes --- */
+/* --- Utility & Responsive Classes --- */
 .text-center {
     text-align: center;
 }
@@ -175,4 +184,25 @@ tr:nth-child(even) {
     border: 1px solid var(--accent-color);
     text-align: center;
     margin-bottom: 1rem;
+}
+
+/* On smaller screens, reduce padding and margins to save space */
+@media (max-width: 768px) {
+    body {
+        font-size: 15px; /* Slightly smaller font on mobile */
+    }
+
+    .form-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.95rem;
+    }
+
+    th, td {
+        padding: 10px 12px;
+    }
 }

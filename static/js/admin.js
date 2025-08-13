@@ -100,13 +100,13 @@ async function renderUsersPage() {
                 <td>${u.email}</td>
                 <td style="max-width: 300px;">${u.active_subscriptions || 'None'}</td>
                 <td>
-                    <button class="btn btn-secondary" onclick="navigateTo('#/users/edit/${u.user_id}')">Edit</button>
-                    <button class="btn btn-secondary" onclick="navigateTo('#/users/subs/${u.user_id}')">Manage Subs</button>
-                    <button class="btn btn-danger" onclick="deleteUser(${u.user_id}, '${u.name}')">Delete</button>
+                    <button class="btn btn-secondary" data-action="edit-user" data-user-id="${u.user_id}">Edit</button>
+                    <button class="btn btn-secondary" data-action="manage-subs" data-user-id="${u.user_id}">Manage Subs</button>
+                    <button class="btn btn-danger" data-action="delete-user" data-user-id="${u.user_id}" data-user-name="${u.name}">Delete</button>
                 </td>
             </tr>
         `).join('');
-        renderLayout(`<h1>Manage Users</h1><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Active Subscriptions</th><th>Actions</th></tr></thead><tbody>${userRows}</tbody></table>`);
+        renderLayout(`<h1>Manage Users</h1><div class="table-container"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Active Subscriptions</th><th>Actions</th></tr></thead><tbody>${userRows}</tbody></table></div>`);
     } catch (error) {
         console.error("Failed to load users page.");
     }
@@ -121,12 +121,12 @@ async function renderPublishersPage() {
                 <td>${p.name}</td>
                 <td>${p.email}</td>
                 <td>
-                    <button class="btn btn-secondary" onclick="navigateTo('#/publishers/edit/${p.publisher_id}')">Edit</button>
-                    <button class="btn btn-danger" onclick="deletePublisher(${p.publisher_id}, '${p.name}')">Delete</button>
+                    <button class="btn btn-secondary" data-action="edit-publisher" data-publisher-id="${p.publisher_id}">Edit</button>
+                    <button class="btn btn-danger" data-action="delete-publisher" data-publisher-id="${p.publisher_id}" data-publisher-name="${p.name}">Delete</button>
                 </td>
             </tr>
         `).join('');
-        renderLayout(`<h1>Manage Publishers</h1><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Actions</th></tr></thead><tbody>${pubRows}</tbody></table>`);
+        renderLayout(`<h1>Manage Publishers</h1><div class="table-container"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Actions</th></tr></thead><tbody>${pubRows}</tbody></table></div>`);
     } catch (error) {
         console.error("Failed to load publishers page.");
     }
@@ -134,8 +134,8 @@ async function renderPublishersPage() {
 async function renderBooksPage() {
     try {
         const books = await apiRequest('/books');
-        const bookRows = books.map(b => `<tr><td>${b.book_id}</td><td>${b.name}</td><td>${b.author_name}</td><td>${b.publisher_name}</td><td>${b.category_name || 'N/A'}</td><td><button class="btn btn-danger" onclick="deleteBook(${b.book_id}, '${b.name}')">Delete</button></td></tr>`).join('');
-        renderLayout(`<h1>Manage Books</h1><table><thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Publisher</th><th>Category</th><th>Actions</th></tr></thead><tbody>${bookRows}</tbody></table>`);
+        const bookRows = books.map(b => `<tr><td>${b.book_id}</td><td>${b.name}</td><td>${b.author_name}</td><td>${b.publisher_name}</td><td>${b.category_name || 'N/A'}</td><td><button class="btn btn-danger" data-action="delete-book" data-book-id="${b.book_id}" data-book-name="${b.name}">Delete</button></td></tr>`).join('');
+        renderLayout(`<h1>Manage Books</h1><div class="table-container"><table><thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Publisher</th><th>Category</th><th>Actions</th></tr></thead><tbody>${bookRows}</tbody></table></div>`);
     } catch (error) {
         console.error("Failed to load books page.");
     }
@@ -144,8 +144,8 @@ async function renderBooksPage() {
 async function renderCategoriesPage() {
     try {
         const categories = await apiRequest('/categories');
-        const catRows = categories.map(c => `<tr><td>${c.category_id}</td><td>${c.category_name}</td><td><button class="btn btn-danger" onclick="deleteCategory(${c.category_id}, '${c.category_name}')">Delete</button></td></tr>`).join('');
-        renderLayout(`<h1>Manage Categories</h1><div class="form-container" style="max-width: none; margin-bottom: 2rem;"><h3>Add New Category</h3><form id="add-category-form"><div class="form-group"><label for="category-name">Category Name</label><input type="text" id="category-name" required></div><button type="submit" class="btn btn-secondary">Add Category</button></form></div><table><thead><tr><th>ID</th><th>Name</th><th>Actions</th></tr></thead><tbody>${catRows}</tbody></table>`);
+        const catRows = categories.map(c => `<tr><td>${c.category_id}</td><td>${c.category_name}</td><td><button class="btn btn-danger" data-action="delete-category" data-category-id="${c.category_id}" data-category-name="${c.category_name}">Delete</button></td></tr>`).join('');
+        renderLayout(`<h1>Manage Categories</h1><div class="form-container" style="max-width: none; margin-bottom: 2rem;"><h3>Add New Category</h3><form id="add-category-form"><div class="form-group"><label for="category-name">Category Name</label><input type="text" id="category-name" required></div><button type="submit" class="btn btn-secondary">Add Category</button></form></div><div class="table-container"><table><thead><tr><th>ID</th><th>Name</th><th>Actions</th></tr></thead><tbody>${catRows}</tbody></table></div>`);
         document.getElementById('add-category-form').addEventListener('submit', async e => {
             e.preventDefault();
             const name = e.target.elements['category-name'].value;
@@ -243,24 +243,26 @@ async function renderManageUserSubscriptionsPage(userId) {
         const categoryRows = allCategories.map(cat => {
             const isSubscribed = activeSubs.includes(cat.category_name);
             const actionButton = isSubscribed
-                ? `<button class="btn btn-danger" onclick="removeAdminSubscription(${userId}, ${cat.category_id})">Remove</button>`
-                : `<button class="btn btn-secondary" onclick="addAdminSubscription(${userId}, ${cat.category_id})">Add (30 days)</button>`;
+                ? `<button class="btn btn-danger" data-action="remove-subscription" data-user-id="${userId}" data-category-id="${cat.category_id}">Remove</button>`
+                : `<button class="btn btn-secondary" data-action="add-subscription" data-user-id="${userId}" data-category-id="${cat.category_id}">Add (30 days)</button>`;
             return `<tr><td>${cat.category_name}</td><td>${isSubscribed ? 'Yes' : 'No'}</td><td>${actionButton}</td></tr>`;
         }).join('');
 
         const content = `
             <h1>Manage Subscriptions for ${user.name}</h1>
             <a href="#/users" style="margin-bottom: 1rem; display: inline-block;">&larr; Back to Users</a>
-            <table><thead><tr><th>Category</th><th>Subscribed?</th><th>Action</th></tr></thead><tbody>${categoryRows}</tbody></table>
+            <div class="table-container"><table><thead><tr><th>Category</th><th>Subscribed?</th><th>Action</th></tr></thead><tbody>${categoryRows}</tbody></table></div>
         `;
         renderLayout(content);
     } catch(error) { console.error("Failed to load manage subscriptions page.")}
 }
 
 
-// --- EVENT LISTENERS & ACTIONS ---
+// --- EVENT HANDLERS & ACTIONS ---
 function addLoginListener() {
-    document.getElementById('login-form').addEventListener('submit', async e => {
+    const form = document.getElementById('login-form');
+    if (!form) return;
+    form.addEventListener('submit', async e => {
         e.preventDefault();
         const email = e.target.email.value;
         const password = e.target.password.value;
@@ -275,43 +277,69 @@ function addLoginListener() {
     });
 }
 
-// --- Functions to be called from inline HTML ---
-// To avoid "not defined" errors, attach them to the window object.
-window.navigateTo = navigateTo;
-window.addAdminSubscription = async (userId, categoryId) => {
-    await apiRequest('/users/add_subscription', 'POST', { user_id: userId, category_id: categoryId });
-    renderManageUserSubscriptionsPage(userId);
-};
-window.removeAdminSubscription = async (userId, categoryId) => {
-    await apiRequest('/users/remove_subscription', 'POST', { user_id: userId, category_id: categoryId });
-    renderManageUserSubscriptionsPage(userId);
-};
-window.deleteUser = async (userId, name) => {
-    if (confirm(`Are you sure you want to delete user: ${name}? This is irreversible.`)) {
-        await apiRequest('/users/delete', 'POST', { user_id: userId });
-        router();
+async function handleAdminClick(e) {
+    const target = e.target.closest('button');
+    if (!target) return;
+
+    const action = target.dataset.action;
+    if (!action) return;
+
+    const userId = target.dataset.userId;
+    const userName = target.dataset.userName;
+    const pubId = target.dataset.publisherId;
+    const pubName = target.dataset.publisherName;
+    const bookId = target.dataset.bookId;
+    const bookName = target.dataset.bookName;
+    const catId = target.dataset.categoryId;
+    const catName = target.dataset.categoryName;
+
+    switch (action) {
+        case 'edit-user':
+            navigateTo(`#/users/edit/${userId}`);
+            break;
+        case 'manage-subs':
+            navigateTo(`#/users/subs/${userId}`);
+            break;
+        case 'delete-user':
+            if (confirm(`Are you sure you want to delete user: ${userName}? This is irreversible.`)) {
+                await apiRequest('/users/delete', 'POST', { user_id: userId });
+                router();
+            }
+            break;
+        case 'edit-publisher':
+            navigateTo(`#/publishers/edit/${pubId}`);
+            break;
+        case 'delete-publisher':
+            if (confirm(`Delete publisher ${pubName}? This will also delete ALL their books.`)) {
+                await apiRequest('/publishers/delete', 'POST', { publisher_id: pubId });
+                router();
+            }
+            break;
+        case 'delete-book':
+            if (confirm(`Delete book: ${bookName}?`)) {
+                await apiRequest('/books/delete', 'POST', { book_id: bookId });
+                router();
+            }
+            break;
+        case 'delete-category':
+            if (confirm(`Delete category "${catName}"? If any book is using this category, deletion will fail.`)) {
+                try {
+                    await apiRequest('/categories/delete', 'POST', { category_id: catId });
+                    router();
+                } catch (e) { /* handled */ }
+            }
+            break;
+        case 'add-subscription':
+            await apiRequest('/users/add_subscription', 'POST', { user_id: userId, category_id: catId });
+            renderManageUserSubscriptionsPage(userId);
+            break;
+        case 'remove-subscription':
+            await apiRequest('/users/remove_subscription', 'POST', { user_id: userId, category_id: catId });
+            renderManageUserSubscriptionsPage(userId);
+            break;
     }
-};
-window.deletePublisher = async (pubId, name) => {
-    if (confirm(`Delete publisher ${name}? This will also delete ALL their books.`)) {
-        await apiRequest('/publishers/delete', 'POST', { publisher_id: pubId });
-        router();
-    }
-};
-window.deleteBook = async (bookId, name) => {
-    if (confirm(`Delete book: ${name}?`)) {
-        await apiRequest('/books/delete', 'POST', { book_id: bookId });
-        router();
-    }
-};
-window.deleteCategory = async (categoryId, name) => {
-    if (confirm(`Delete category "${name}"? If any book is using this category, deletion will fail.`)) {
-        try {
-            await apiRequest('/categories/delete', 'POST', { category_id: categoryId });
-            router();
-        } catch (e) { /* handled */ }
-    }
-};
+}
+
 
 // --- ROUTER ---
 const routes = {
@@ -350,7 +378,11 @@ function router() {
 }
 
 // --- INITIALIZATION ---
-loadState();
-window.addEventListener('hashchange', router);
-window.addEventListener('load', router);
-router();
+function init() {
+    loadState();
+    window.addEventListener('hashchange', router);
+    window.addEventListener('load', router);
+    app.addEventListener('click', handleAdminClick);
+    router();
+}
+init();
