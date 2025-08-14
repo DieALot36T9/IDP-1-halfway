@@ -1,4 +1,4 @@
-import cx_Oracle
+import oracledb
 import datetime
 import random
 import string
@@ -11,8 +11,8 @@ DB_DSN = "localhost:1521/XEPDB1"
 
 def get_db_connection():
     
-    #connection to the db using cx_Oracle.
-    connection = cx_Oracle.connect(user=DB_USER, password=DB_PASSWORD, dsn=DB_DSN, encoding="UTF-8")
+    #connection to the db using oracledb.
+    connection = oracledb.connect(user=DB_USER, password=DB_PASSWORD, dsn=DB_DSN, encoding="UTF-8")
     return connection
 
 def _generate_session_token(length=40):
@@ -54,7 +54,7 @@ def set_session_token(entity_id, entity_type, expiry_minutes=60):
             cursor.execute(sql, token=token, expiry=expiry_time, id=entity_id)
             conn.commit()
             return token
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in set_session_token for type {entity_type}: {e}")
         return None
     finally:
@@ -79,7 +79,7 @@ def get_entity_by_token(token, entity_type):
             cursor.execute(sql, token=token, current_time=datetime.datetime.now())
             entity_data = _fetch_as_dict(cursor)
             return entity_data[0] if entity_data else None
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in get_entity_by_token for type {entity_type}: {e}")
         return None
     finally:
@@ -98,7 +98,7 @@ def create_user(name, email, phone, password):
             cursor.execute(sql, name=name, email=email, phone=phone, password=password)
             conn.commit()
             return True
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in create_user: {e}")
         return False
     finally:
@@ -125,7 +125,7 @@ def verify_user_login(email, password):
                     user['subscriptions'] = get_user_active_subscriptions(user['user_id'], conn)
                     return user
             return None
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in verify_user_login: {e}")
         return None
     finally:
@@ -141,7 +141,7 @@ def update_user_profile(user_id, name, password):
             cursor.execute(sql, name=name, password=password, user_id=user_id)
             conn.commit()
             return cursor.rowcount > 0
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in update_user_profile: {e}")
         return False
     finally:
@@ -162,7 +162,7 @@ def create_publisher(name, email, phone, address, description, image_path, passw
             cursor.execute(sql, name=name, email=email, phone=phone, address=address, description_val=description, img=image_path, pass_val=password)
             conn.commit()
             return True
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in create_publisher: {e}")
         return False
     finally:
@@ -185,7 +185,7 @@ def verify_publisher_login(email, password):
                     publisher['type'] = 'publisher'
                     return publisher
             return None
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in verify_publisher_login: {e}")
         return None
     finally:
@@ -201,7 +201,7 @@ def get_publisher_details(publisher_id):
             cursor.execute(sql, id=publisher_id)
             data = _fetch_as_dict(cursor)
             return data[0] if data else None
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in get_publisher_details: {e}")
         return None
     finally:
@@ -222,7 +222,7 @@ def add_book(name, author, desc, category_id, cover_path, pdf_path, pub_id):
             cursor.execute(sql, name=name, author=author, desc_val=desc, cat_id=category_id, cover=cover_path, pdf=pdf_path, pub_id=pub_id)
             conn.commit()
             return True
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in add_book: {e}")
         return False
     finally:
@@ -246,7 +246,7 @@ def update_book(book_id, name, author, desc, category_id, cover_path):
             cursor.execute(sql, name=name, author=author, desc_val=desc, cat_id=category_id, cover=cover_path, book_id=book_id)
             conn.commit()
             return cursor.rowcount > 0
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in update_book: {e}")
         return False
     finally:
@@ -290,7 +290,7 @@ def get_all_books(search_term="", category_id=None):
             
             cursor.execute(sql, params)
             return _fetch_as_dict(cursor)
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in get_all_books: {e}")
         return []
     finally:
@@ -307,7 +307,7 @@ def delete_book(book_id):
             cursor.execute("DELETE FROM books WHERE book_id = :id", id=book_id)
             conn.commit()
             return paths[0] if paths else None
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in delete_book: {e}")
         return None
     finally:
@@ -328,7 +328,7 @@ def get_books_by_publisher(publisher_id):
             """
             cursor.execute(sql, id=publisher_id)
             return _fetch_as_dict(cursor)
-    except cx_Oracle.Error as e:
+    except oracledb.Error as e:
         print(f"Database error in get_books_by_publisher: {e}")
         return []
     finally:

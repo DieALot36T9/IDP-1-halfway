@@ -117,17 +117,7 @@ function renderNavbar() {
     } else {
         links = `<a href="#/books">Browse Books</a><a href="#/login">Login</a><a href="#/register">Register</a>`;
     }
-    // Added a hamburger button for mobile view. This button will be shown on smaller screens
-    // and will toggle the visibility of the navigation links.
-    return `
-        <nav class="navbar">
-            <a href="#/" class="logo">eBookReader</a>
-            <button class="navbar-toggle" aria-label="Toggle navigation">
-                <span class="hamburger"></span>
-            </button>
-            <div class="navbar-links">${links}</div>
-        </nav>
-    `;
+    return `<nav class="navbar"><a href="#/" class="logo">eBookReader</a><div class="navbar-links">${links}</div></nav>`;
 }
 
 function renderBookCard(book, context = 'browse') {
@@ -524,14 +514,37 @@ async function readBook(bookId) {
         }
 
         let pdfDoc = null, pageNum = 1, pageIsRendering = false, pageNumIsPending = null;
-        const scale = 1.5, canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        const pdfContainer = document.getElementById('pdf-viewer-container');
+
 
         const renderPage = num => {
             pageIsRendering = true;
             pdfDoc.getPage(num).then(page => {
-                const viewport = page.getViewport({ scale });
+                // --- DYNAMIC SCALE CALCULATION ---
+                // This is the new logic to make the PDF viewer responsive.
+                // Instead of a fixed scale, we calculate the best scale to fit the page
+                // to the width of its container.
+
+                // 1. Get the width of the container div.
+                const containerWidth = pdfContainer.clientWidth;
+
+                // 2. Get the original width of the PDF page at a scale of 1.
+                const viewportAtScale1 = page.getViewport({ scale: 1 });
+                const pageWidth = viewportAtScale1.width;
+
+                // 3. Calculate the scale required to make the page fit the container.
+                // We subtract a small amount (padding) to prevent a horizontal scrollbar.
+                const scale = (containerWidth - 2) / pageWidth;
+
+                // 4. Create the final viewport with the calculated dynamic scale.
+                const viewport = page.getViewport({ scale: scale });
+                // --- END OF DYNAMIC SCALE CALCULATION ---
+
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
+
                 const renderContext = { canvasContext: ctx, viewport };
                 page.render(renderContext).promise.then(() => {
                     pageIsRendering = false;
@@ -613,18 +626,6 @@ function init() {
         if (e.target.id === 'logout-btn') {
             e.preventDefault();
             logout();
-        }
-
-        // Event listener for the hamburger menu.
-        // It listens for clicks on the body. If the click target is the .navbar-toggle button
-        // (or an element inside it), it toggles the 'active' class on the .navbar-links container.
-        // Using event delegation on `document.body` ensures this works even though the navbar is
-        // re-rendered on each page change.
-        if (e.target.closest('.navbar-toggle')) {
-            const links = document.querySelector('.navbar-links');
-            if (links) {
-                links.classList.toggle('active');
-            }
         }
     });
     router();
