@@ -156,11 +156,13 @@ function renderBookCard(book, context = 'browse') {
         actions = `<button class="btn btn-primary" onclick="navigateTo('#/login')">Login to Read</button>`;
     }
 
+    actions += ` <button class="btn btn-info" onclick="navigateTo('#/book/${book.book_id}')">View Details</button>`;
+
     return `
         <div class="book-card" data-book-id="${book.book_id}">
-            <img src="${coverPath}" alt="${book.name}" class="book-card-cover">
+            <img src="${coverPath}" alt="${book.name}" class="book-card-cover" onclick="navigateTo('#/book/${book.book_id}')" style="cursor: pointer;">
             <div class="book-card-content">
-                <h3>${book.name}</h3>
+                <h3 onclick="navigateTo('#/book/${book.book_id}')" style="cursor: pointer;">${book.name}</h3>
                 <p class="author">by ${book.author_name}</p>
                 <p class="category">Category: ${book.category_name || 'Uncategorized'}</p>
                 <p class="publisher">Publisher: ${book.publisher_name || 'N/A'}</p>
@@ -567,6 +569,139 @@ async function readBook(bookId) {
 }
 
 
+async function renderBookDetailsPage(bookId) {
+    app.innerHTML = `${renderNavbar()}<main id="book-details-container">Loading...</main>`;
+    const container = document.getElementById('book-details-container');
+
+    const render = async () => {
+        try {
+            const [book, reviews] = await Promise.all([
+                apiRequest(`/books/${bookId}`),
+                apiRequest(`/books/${bookId}/reviews`)
+            ]);
+
+            const coverPath = book.cover_path ? `/static/uploads/${book.cover_path}` : 'https://placehold.co/400x600/eee/ccc?text=No+Cover';
+
+            let reviewsHTML = '<h3>Customer Reviews</h3>';
+            if (reviews.length > 0) {
+                reviewsHTML += `<div class="reviews-list">${reviews.map(renderReviewCard).join('')}</div>`;
+            } else {
+                reviewsHTML += '<p>No reviews yet. Be the first to write one!</p>';
+            }
+
+            let actions = '';
+            if (state.isLoggedIn && state.user.type === 'user') {
+                const isSubscribed = state.user.subscriptions && state.user.subscriptions[book.category_id];
+                if (isSubscribed) {
+                    actions = `<button class="btn btn-primary" onclick="readBook(${book.book_id})">Read</button>`;
+                } else {
+                    actions = `<button class="btn btn-warning" onclick="navigateTo('#/subscribe')">Subscribe to Read</button>`;
+                }
+                actions += ` <button class="btn btn-secondary" onclick="addBookmark(${book.book_id})">Bookmark</button>`;
+            } else if (!state.isLoggedIn) {
+                actions = `<button class="btn btn-primary" onclick="navigateTo('#/login')">Login to Read</button>`;
+            }
+
+
+            container.innerHTML = `
+                <div class="book-details">
+                    <div class="book-details-header">
+                        <img src="${coverPath}" alt="${book.name}" class="book-details-cover">
+                        <div class="book-details-info">
+                            <h1>${book.name}</h1>
+                            <h2>by ${book.author_name}</h2>
+                            <p><strong>Publisher:</strong> ${book.publisher_name}</p>
+                            <p><strong>Category:</strong> ${book.category_name}</p>
+                            <div class="book-details-actions">${actions}</div>
+                        </div>
+                    </div>
+                    <div class="book-details-description">
+                        <h3>Description</h3>
+                        <p>${book.description.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    <div id="reviews-section">
+                        ${reviewsHTML}
+                    </div>
+                    ${state.isLoggedIn && state.user.type === 'user' ? renderReviewForm(bookId) : ''}
+                </div>
+            `;
+
+            if (state.isLoggedIn && state.user.type === 'user') {
+                const reviewForm = document.getElementById('review-form');
+                if (reviewForm) {
+                    reviewForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        await submitReview(bookId);
+                        render(); // Re-render the page to show the new review
+                    });
+                }
+            }
+
+        } catch (error) {
+            container.innerHTML = `<p class="error-message">Could not load book details. ${error.message}</p>`;
+        }
+    };
+    await render();
+}
+
+function renderReviewCard(review) {
+    const ratingStars = '⭐'.repeat(Math.floor(review.rating)) + (review.rating % 1 !== 0 ? '✨' : '');
+    return `
+        <div class="review-card">
+            <div class="review-header">
+                <strong>${review.user_name}</strong>
+                <span class="review-rating">${ratingStars} (${review.rating}/5)</span>
+            </div>
+            <p class="review-comment">${review.comment_text}</p>
+            <small class="review-date">Reviewed on: ${new Date(review.created_at).toLocaleDateString()}</small>
+        </div>
+    `;
+}
+
+function renderReviewForm(bookId) {
+    return `
+        <div id="review-form-container" class="form-container">
+            <h3>Write a Review</h3>
+            <form id="review-form">
+                <div class="form-group">
+                    <label for="rating">Rating</label>
+                    <select id="rating" class="form-control" required>
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="comment_text">Your Comment</label>
+                    <textarea id="comment_text" class="form-control" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+            </form>
+        </div>
+    `;
+}
+
+async function submitReview(bookId) {
+    const rating = document.getElementById('rating').value;
+    const comment_text = document.getElementById('comment_text').value;
+
+    if (!rating || !comment_text.trim()) {
+        displayError("Please provide a rating and a comment.");
+        return;
+    }
+
+    try {
+        await apiRequest(`/books/${bookId}/reviews`, 'POST', { rating: parseFloat(rating), comment_text });
+        alert('Review submitted successfully!');
+        // The calling function will re-render the page
+    } catch (error) {
+        // The error is already displayed by apiRequest
+    }
+}
+
+
 // --- ROUTER ---
 const routes = {
     '/': renderLandingPage,
@@ -581,6 +716,7 @@ const routes = {
     '/publisher/dashboard': renderPublisherDashboard,
     '/publisher/add-book': () => renderAddOrEditBookPage(),
     '/publisher/edit-book/:id': (id) => renderAddOrEditBookPage(id),
+    '/book/:id': (id) => renderBookDetailsPage(id),
 };
 
 function router() {

@@ -27,6 +27,80 @@ def add_book(name, author, desc, category_id, cover_path, pdf_path, pub_id):
         if conn:
             conn.close()
 
+
+def get_book_by_id(book_id):
+    """Gets a single book by its ID, including publisher and category names."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT b.book_id, b.name, b.author_name, b.description, b.cover_path,
+                       b.publisher_id, p.name as publisher_name,
+                       b.category_id, c.category_name
+                FROM books b
+                JOIN publishers p ON b.publisher_id = p.publisher_id
+                LEFT JOIN categories c ON b.category_id = c.category_id
+                WHERE b.book_id = :id
+            """
+            cursor.execute(sql, id=book_id)
+            books = _fetch_as_dict(cursor)
+            return books[0] if books else None
+    except cx_Oracle.Error as e:
+        print(f"Database error in get_book_by_id: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_reviews_for_book(book_id):
+    """Gets all reviews for a specific book, including user details."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT r.review_id, r.rating, r.comment_text, r.created_at,
+                       u.user_id, u.name as user_name
+                FROM reviews r
+                JOIN users u ON r.user_id = u.user_id
+                WHERE r.book_id = :id
+                ORDER BY r.created_at DESC
+            """
+            cursor.execute(sql, id=book_id)
+            return _fetch_as_dict(cursor)
+    except cx_Oracle.Error as e:
+        print(f"Database error in get_reviews_for_book: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
+
+
+def add_review(book_id, user_id, rating, comment_text):
+    """Adds a new review for a book."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            sql = """
+                INSERT INTO reviews (book_id, user_id, rating, comment_text)
+                VALUES (:book_id, :user_id, :rating, :comment)
+            """
+            cursor.execute(sql, book_id=book_id, user_id=user_id, rating=rating, comment=comment_text)
+            conn.commit()
+            return True
+    except cx_Oracle.Error as e:
+        print(f"Database error in add_review: {e}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
 def update_book(book_id, name, author, desc, category_id, cover_path):
     """Updates an existing book's details in the database."""
     conn = get_db_connection()

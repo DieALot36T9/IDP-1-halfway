@@ -10,7 +10,8 @@ from db.user_queries import (get_entity_by_token, verify_user_login, create_user
                              get_user_by_id, update_user_profile)
 from db.publisher_queries import verify_publisher_login, get_publisher_details, create_publisher
 from db.book_queries import (get_all_books, get_books_by_publisher, get_book_pdf_path,
-                             add_book, update_book, delete_book)
+                             add_book, update_book, delete_book, get_book_by_id,
+                             get_reviews_for_book, add_review)
 from db.category_queries import get_all_categories
 from db.subscription_queries import check_user_subscription_for_book, add_subscription_for_user
 from db.bookmark_queries import (get_user_bookmarks, add_bookmark, remove_bookmark,
@@ -29,6 +30,10 @@ def handle_get_request(handler):
         # API routes
         if path.startswith('/api/books/read/'):
             handle_read_book(handler, path)
+        elif path.startswith('/api/books/') and path.endswith('/reviews'):
+            handle_get_book_reviews(handler, path)
+        elif path.startswith('/api/books/'):
+            handle_get_book_details(handler, path)
         elif path == '/api/books':
             handle_get_all_books(handler, query)
         elif path == '/api/books/publisher':
@@ -68,6 +73,29 @@ def handle_post_request(handler):
         handler._send_response(415, {'error': 'Unsupported Media Type'})
 
 # --- GET Request Handlers ---
+
+def handle_get_book_details(handler, path):
+    """Handles requests for a single book's details."""
+    try:
+        book_id = int(path.split('/')[-1])
+        book = get_book_by_id(book_id)
+        if book:
+            handler._send_response(200, book)
+        else:
+            handler._send_response(404, {'error': 'Book not found'})
+    except (ValueError, IndexError):
+        handler._send_response(400, {'error': 'Invalid book ID format'})
+
+
+def handle_get_book_reviews(handler, path):
+    """Handles requests for a book's reviews."""
+    try:
+        book_id = int(path.split('/')[-2])
+        reviews = get_reviews_for_book(book_id)
+        handler._send_response(200, reviews)
+    except (ValueError, IndexError):
+        handler._send_response(400, {'error': 'Invalid book ID format'})
+
 
 def handle_read_book(handler, path):
     """Handles requests to read a book's PDF."""
@@ -192,7 +220,9 @@ def handle_json_post(handler, path):
     content_length = int(handler.headers['Content-Length'])
     post_data = json.loads(handler.rfile.read(content_length))
 
-    if path == '/api/login':
+    if path.startswith('/api/books/') and path.endswith('/reviews'):
+        handle_add_book_review(handler, path, post_data)
+    elif path == '/api/login':
         handle_login(handler, post_data)
     elif path == '/api/user/register':
         handle_user_register(handler, post_data)
@@ -206,6 +236,31 @@ def handle_json_post(handler, path):
         handle_bookmark_and_history(handler, path, post_data)
     else:
         handler._send_response(404, {'error': 'API endpoint not found for JSON POST'})
+
+def handle_add_book_review(handler, path, post_data):
+    """Handles adding a new review to a book."""
+    user, user_type = handler._get_authenticated_entity()
+    if not (user and user_type == 'user'):
+        handler._send_response(401, {'error': 'Authentication required to post a review'})
+        return
+
+    try:
+        book_id = int(path.split('/')[-2])
+        rating = post_data.get('rating')
+        comment_text = post_data.get('comment_text')
+
+        if not (rating and comment_text):
+            handler._send_response(400, {'error': 'Rating and comment text are required'})
+            return
+
+        success = add_review(book_id, user['user_id'], rating, comment_text)
+        if success:
+            handler._send_response(201, {'message': 'Review added successfully'})
+        else:
+            handler._send_response(500, {'error': 'Failed to add review'})
+    except (ValueError, IndexError):
+        handler._send_response(400, {'error': 'Invalid book ID format'})
+
 
 def handle_login(handler, post_data):
     """Handles user and publisher login."""
