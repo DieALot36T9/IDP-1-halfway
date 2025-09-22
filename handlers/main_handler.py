@@ -11,7 +11,7 @@ from db.user_queries import (get_entity_by_token, verify_user_login, create_user
 from db.publisher_queries import verify_publisher_login, get_publisher_details, create_publisher
 from db.book_queries import (get_all_books, get_books_by_publisher, get_book_pdf_path,
                              add_book, update_book, delete_book, get_book_by_id,
-                             get_reviews_for_book, add_review)
+                             get_reviews_for_book, add_review, get_sentiment_analysis_for_book)
 from db.category_queries import get_all_categories
 from db.subscription_queries import check_user_subscription_for_book, add_subscription_for_user
 from db.bookmark_queries import (get_user_bookmarks, add_bookmark, remove_bookmark,
@@ -32,6 +32,8 @@ def handle_get_request(handler):
             handle_read_book(handler, path)
         elif path.startswith('/api/books/') and path.endswith('/reviews'):
             handle_get_book_reviews(handler, path)
+        elif path.startswith('/api/books/sentiment/'):
+            handle_get_book_sentiment(handler, path)
         elif path.startswith('/api/books/'):
             handle_get_book_details(handler, path)
         elif path == '/api/books':
@@ -93,6 +95,21 @@ def handle_get_book_reviews(handler, path):
         book_id = int(path.split('/')[-2])
         reviews = get_reviews_for_book(book_id)
         handler._send_response(200, reviews)
+    except (ValueError, IndexError):
+        handler._send_response(400, {'error': 'Invalid book ID format'})
+
+
+def handle_get_book_sentiment(handler, path):
+    """Handles requests for a book's sentiment analysis."""
+    pub, pub_type = handler._get_authenticated_entity()
+    if not (pub and pub_type == 'publisher'):
+        handler._send_response(401, {'error': 'Unauthorized: Publisher access required'})
+        return
+
+    try:
+        book_id = int(path.split('/')[-1])
+        sentiment_data = get_sentiment_analysis_for_book(book_id)
+        handler._send_response(200, sentiment_data)
     except (ValueError, IndexError):
         handler._send_response(400, {'error': 'Invalid book ID format'})
 

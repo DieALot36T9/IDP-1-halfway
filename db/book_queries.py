@@ -3,6 +3,7 @@
 
 import cx_Oracle
 from db.connection import get_db_connection, _fetch_as_dict
+from sentiment import SentimentAnalyzer
 
 def add_book(name, author, desc, category_id, cover_path, pdf_path, pub_id):
     """Adds a new book to the database, linking it to a category and publisher."""
@@ -26,6 +27,39 @@ def add_book(name, author, desc, category_id, cover_path, pdf_path, pub_id):
     finally:
         if conn:
             conn.close()
+
+
+def get_sentiment_analysis_for_book(book_id):
+    """
+    Gets sentiment analysis for a book's reviews.
+    """
+    reviews = get_reviews_for_book(book_id)
+    if not reviews:
+        return {"positive": 0, "negative": 0, "neutral": 0, "total": 0}
+
+    analyzer = SentimentAnalyzer()
+    analyzer.load_model()
+
+    sentiments = [analyzer.get_sentiment(review['comment_text']) for review in reviews]
+
+    positive_count = sentiments.count('positive')
+    negative_count = sentiments.count('negative')
+
+    total_reviews = len(sentiments)
+
+    # Calculate percentages
+    positive_percentage = (positive_count / total_reviews) * 100 if total_reviews > 0 else 0
+    negative_percentage = (negative_count / total_reviews) * 100 if total_reviews > 0 else 0
+
+    # The model I've trained is binary (positive/negative), so neutral is 0.
+    neutral_percentage = 0
+
+    return {
+        "positive": round(positive_percentage, 2),
+        "negative": round(negative_percentage, 2),
+        "neutral": round(neutral_percentage, 2),
+        "total": total_reviews
+    }
 
 
 def get_book_by_id(book_id):
