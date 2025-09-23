@@ -150,7 +150,7 @@ function renderBookCard(book, context = 'browse') {
                 actions += ` <button class="btn btn-secondary" onclick="addBookmark(${book.book_id})">Bookmark</button>`;
             }
         } else if (state.user.type === 'publisher' && state.user.publisher_id === book.publisher_id) {
-            actions = `<button class="btn btn-secondary" onclick="navigateTo('#/publisher/edit-book/${book.book_id}')">Edit</button> <button class="btn btn-danger" onclick="deleteBook(${book.book_id})">Delete</button>`;
+            actions = `<button class="btn btn-secondary" onclick="navigateTo('#/publisher/edit-book/${book.book_id}')">Edit</button> <button class="btn btn-danger" onclick="deleteBook(${book.book_id})">Delete</button> <button class="btn btn-info" onclick="viewSentiment(${book.book_id})">View Sentiment</button>`;
         }
     } else {
         actions = `<button class="btn btn-primary" onclick="navigateTo('#/login')">Login to Read</button>`;
@@ -178,6 +178,51 @@ function renderBookGrid(books, context = 'browse') {
         return '<p class="text-center">No books found for this selection.</p>';
     }
     return `<div class="book-grid">${books.map(book => renderBookCard(book, context)).join('')}</div>`;
+}
+
+function renderSentimentModal(sentimentData) {
+    const modalHTML = `
+        <div class="modal-overlay" onclick="closeModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <h2>Sentiment Analysis</h2>
+                <p>Total Reviews: ${sentimentData.total}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sentiment</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Positive</td>
+                            <td>${sentimentData.positive}%</td>
+                        </tr>
+                        <tr>
+                            <td>Negative</td>
+                            <td>${sentimentData.negative}%</td>
+                        </tr>
+                        <tr>
+                            <td>Neutral</td>
+                            <td>${sentimentData.neutral}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'modal-container';
+    modalContainer.innerHTML = modalHTML;
+    app.appendChild(modalContainer);
+}
+
+function closeModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (modalContainer) {
+        modalContainer.remove();
+    }
 }
 
 // --- PAGE RENDERING FUNCTIONS ---
@@ -786,6 +831,16 @@ window.removeBookmark = async (bookId) => {
             alert("Bookmark removed.");
             router();
         } catch(e) {/* handled */}
+    }
+};
+
+window.viewSentiment = async (bookId) => {
+    if (!state.isLoggedIn || state.user.type !== 'publisher') return;
+    try {
+        const sentimentData = await apiRequest(`/books/sentiment/${bookId}`);
+        renderSentimentModal(sentimentData);
+    } catch (e) {
+        // error handled in apiRequest
     }
 };
 window.deleteBook = async (bookId) => {
