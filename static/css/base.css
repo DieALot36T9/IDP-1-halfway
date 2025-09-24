@@ -167,6 +167,13 @@ tr:nth-child(even) {
     text-align: center;
 }
 
+.book-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
 .error-message {
     color: var(--danger-color);
     background-color: #ffddd9;
