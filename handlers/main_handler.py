@@ -28,7 +28,11 @@ def handle_get_request(handler):
 
     if path.startswith('/api/'):
         # API routes
-        if path.startswith('/api/books/read/'):
+        if path == '/api/books':
+            handle_get_all_books(handler, query)
+        elif path == '/api/books/publisher':
+            handle_get_publisher_books(handler)
+        elif path.startswith('/api/books/read/'):
             handle_read_book(handler, path)
         elif path.startswith('/api/books/') and path.endswith('/reviews'):
             handle_get_book_reviews(handler, path)
@@ -36,10 +40,6 @@ def handle_get_request(handler):
             handle_get_book_sentiment(handler, path)
         elif path.startswith('/api/books/'):
             handle_get_book_details(handler, path)
-        elif path == '/api/books':
-            handle_get_all_books(handler, query)
-        elif path == '/api/books/publisher':
-            handle_get_publisher_books(handler)
         elif path == '/api/categories':
             handle_get_all_categories(handler)
         elif path == '/api/publisher-details':
