@@ -225,6 +225,8 @@ function closeModal() {
     }
 }
 
+window.closeModal = closeModal;
+
 // --- PAGE RENDERING FUNCTIONS ---
 
 function renderLandingPage() {
