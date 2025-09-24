@@ -123,9 +123,9 @@ def add_review(book_id, user_id, rating, comment_text):
         with conn.cursor() as cursor:
             sql = """
                 INSERT INTO reviews (book_id, user_id, rating, comment_text)
-                VALUES (:book_id, :user_id, :rating, :comment)
+                VALUES (:book_id, :user_id, :rating, :comment_text)
             """
-            cursor.execute(sql, book_id=book_id, user_id=user_id, rating=rating, comment=comment_text)
+            cursor.execute(sql, book_id=book_id, user_id=user_id, rating=rating, comment_text=comment_text)
             conn.commit()
             return True
     except cx_Oracle.Error as e:
